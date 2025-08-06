@@ -1,3 +1,4 @@
 base64.json
 /test-output/**.*
 /.idea/
+/.idea/**.*

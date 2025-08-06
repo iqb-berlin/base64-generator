@@ -1,6 +1,6 @@
 param(
     [string]$SourcePath = "",
-    [string]$TargetFileName = ".\base64.json"
+    [string]$TargetFileName = ""
 )
 
 function Convert-ToBase64 {
@@ -52,6 +52,21 @@ Write-Host "=== IQB Transformation von Audio- und Bilddateien nach base64 ===" -
 
 if (($SourcePath -gt 0) -and (Test-Path $SourcePath)) {
     Write-Host "Starte Generieren Verzeichnis '$($SourcePath)'" -ForegroundColor Green
+
+    if ($TargetFileName -gt 0) {
+        $TargetFilePath = [System.IO.Path]::GetDirectoryName($TargetFileName)
+        if (-not (Test-Path $TargetFilePath)) {
+            Write-Warning "Verzeichnis der Zieldatei nicht gefunden: $TargetFilePath"
+            $TargetFileName = ".\base64.json"
+        } else {
+            $TargetFilePathExtension = [System.IO.Path]::GetExtension($TargetFileName).ToLower()
+            if (-not ($TargetFilePathExtension -eq ".json")) {
+                $TargetFileName = $TargetFileName + ".json"
+            }
+        }
+    } else {
+        $TargetFileName = ".\base64.json"
+    }
     Write-Host "Zieldatei '$($TargetFileName)'..." -ForegroundColor Green
     $Files = Get-ChildItem -Path $SourcePath
 
