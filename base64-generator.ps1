@@ -3,6 +3,11 @@ param(
     [string]$TargetFileName = ""
 )
 
+# IQB-base64 generator
+# version 1.0
+# git-repo: https://github.com/iqb-berlin/base64-generator
+# docs (German only): https://iqb-berlin.github.io/tba-info/tasks/design/media/base64
+
 function Convert-ToBase64 {
     param(
         [string]$FilePath
