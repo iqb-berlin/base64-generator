@@ -3,19 +3,16 @@ param(
     [string]$TargetFileName = ".\base64.json"
 )
 
-function Convert-ImageToBase64 {
+function Convert-ToBase64 {
     param(
-        [string]$ImagePath
+        [string]$FilePath
     )
-    if (-not (Test-Path $ImagePath)) {
-        Write-Warning "Bilddatei nicht gefunden: $ImagePath"
+    if (-not (Test-Path $FilePath)) {
+        Write-Warning "Datei nicht gefunden: $FilePath"
         return ""
     }
     try {
-        $imageBytes = [System.IO.File]::ReadAllBytes($ImagePath)
-        $base64String = [System.Convert]::ToBase64String($imageBytes)
-
-        $extension = [System.IO.Path]::GetExtension($ImagePath).ToLower()
+        $extension = [System.IO.Path]::GetExtension($FilePath).ToLower()
         $mimeType = switch ($extension) {
             ".jpg"  { "image/jpeg" }
             ".jpeg" { "image/jpeg" }
@@ -23,44 +20,31 @@ function Convert-ImageToBase64 {
             ".gif"  { "image/gif" }
             ".bmp"  { "image/bmp" }
             ".webp" { "image/webp" }
-            default { "image/png" }
-        }
-
-        return "data:$mimeType;base64,$base64String"
-    }
-    catch {
-        Write-Error "Fehler beim Konvertieren des Bildes zu Base64: $_"
-        return ""
-    }
-}
-
-function Convert-AudioToBase64 {
-    param(
-        [string]$AudioPath
-    )
-
-    if (-not (Test-Path $AudioPath)) {
-        Write-Warning "Audiodatei nicht gefunden: $AudioPath"
-        return ""
-    }
-
-    try {
-        $audioBytes = [System.IO.File]::ReadAllBytes($AudioPath)
-        $base64String = [System.Convert]::ToBase64String($audioBytes)
-
-        $extension = [System.IO.Path]::GetExtension($AudioPath).ToLower()
-        $mimeType = switch ($extension) {
             ".mp3"  { "audio/mpeg" }
             ".wav"  { "audio/wav" }
             ".ogg"  { "audio/ogg" }
             ".m4a"  { "audio/mp4" }
-            default { "audio/mpeg" }
+            default { "" }
         }
-
-        return "data:$mimeType;base64,$base64String"
+        if ($mimeType -gt 0) {
+            $paramKey = $mimeType.Substring(0,5) + "Source"
+            $filename = [System.IO.Path]::GetFileName($FilePath)
+            # $imageBytes = [System.IO.File]::ReadAllBytes($FilePath)
+            # $base64String = [System.Convert]::ToBase64String($imageBytes)
+            $base64String = "yoyo"
+            $base65parameter = "data:$mimeType;base64,$base64String"
+            $file = [ordered]@{
+                $paramKey = $base65parameter
+                filename = $filename
+            }
+            return $file
+        } else {
+            Write-Warning "Unbekannter Dateityp: $FilePath - ignoriere"
+            return ""
+        }
     }
     catch {
-        Write-Error "Fehler beim Konvertieren der Audiodatei zu Base64: $_"
+        Write-Error "Fehler beim Konvertieren zu Base64: $_"
         return ""
     }
 }
@@ -70,6 +54,37 @@ Write-Host "=== IQB Transformation von Audio- und Bilddateien nach base64 ===" -
 if (($SourcePath -gt 0) -and (Test-Path $SourcePath)) {
     Write-Host "Starte Generieren Verzeichnis '$($SourcePath)'" -ForegroundColor Green
     Write-Host "Zieldatei '$($TargetFileName)'..." -ForegroundColor Green
+    $Files = Get-ChildItem -Path $SourcePath
+
+    $convertedFiles = @()
+    for ($i = 0; $i -lt $Files.Length; $i++) {
+        $FileToConvert = $Files[$i]
+        $Index = $i + 1
+        Write-Host "$Index : $FileToConvert"
+        $file = Convert-ToBase64 -FilePath "$SourcePath\$FileToConvert"
+
+        if (-not ($file.GetType() -eq [string])) {
+            $convertedFiles += $file
+        }
+    }
+    $myDate = Get-Date
+    $output = [ordered]@{
+        tool = "iqb-base64-generator"
+        created = $myDate.ToString()
+        files = $convertedFiles
+    }
+    $jsonOutput = $output | ConvertTo-Json -Compress:$false
+    try
+    {
+        $jsonOutput | Out-File -FilePath $TargetFileName -Encoding UTF8
+        Write-Host "$TargetFileName erzeugt."
+    } catch
+    {
+        Write-Host ""
+        Write-Host "❌ Fehler beim Speichern der Datei:" -ForegroundColor Red
+        Write-Host $_.Exception.Message -ForegroundColor Red
+    }
+    Write-Host "beendet."
 } else {
     if ($SourcePath -gt 0) {
         Write-Host "Quellverzeichnis '$($SourcePath)' nicht gefunden!" -ForegroundColor Magenta
