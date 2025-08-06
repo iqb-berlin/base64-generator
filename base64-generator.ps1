@@ -29,12 +29,11 @@ function Convert-ToBase64 {
         if ($mimeType -gt 0) {
             $paramKey = $mimeType.Substring(0,5) + "Source"
             $filename = [System.IO.Path]::GetFileName($FilePath)
-            # $imageBytes = [System.IO.File]::ReadAllBytes($FilePath)
-            # $base64String = [System.Convert]::ToBase64String($imageBytes)
-            $base64String = "yoyo"
-            $base65parameter = "data:$mimeType;base64,$base64String"
+            $imageBytes = [System.IO.File]::ReadAllBytes($FilePath)
+            $base64String = [System.Convert]::ToBase64String($imageBytes)
+            $base64parameter = "data:$mimeType;base64,$base64String"
             $file = [ordered]@{
-                $paramKey = $base65parameter
+                $paramKey = $base64parameter
                 filename = $filename
             }
             return $file
