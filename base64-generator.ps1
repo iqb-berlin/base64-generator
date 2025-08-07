@@ -55,27 +55,41 @@ function Convert-ToBase64 {
 
 Write-Host "=== IQB Transformation von Audio- und Bilddateien nach base64 ===" -ForegroundColor Cyan
 
-if (($SourcePath -gt 0) -and (Test-Path $SourcePath)) {
+if ([string]::IsNullOrEmpty($SourcePath) -or ($SourcePath -eq ".") -or ($SourcePath -eq ".\")) {
+    $SourcePath = "."
+} elseif (-not (Test-Path $SourcePath)){
+    Write-Host "❌ Pfad nicht gefunden: $SourcePath" -ForegroundColor Red
+    $SourcePath = ""
+}
+
+if (-not ([string]::IsNullOrEmpty($SourcePath))) {
     Write-Host "Starte Generieren Verzeichnis '$($SourcePath)'" -ForegroundColor Green
+    $DefaultTargetFileName = ".\base64.json"
 
     if ($TargetFileName -gt 0) {
         $TargetFilePath = [System.IO.Path]::GetDirectoryName($TargetFileName)
-        if (-not (Test-Path $TargetFilePath)) {
-            Write-Warning "Verzeichnis der Zieldatei nicht gefunden: $TargetFilePath"
-            $TargetFileName = ".\base64.json"
-        } else {
-            $TargetFilePathExtension = [System.IO.Path]::GetExtension($TargetFileName).ToLower()
-            if (-not ($TargetFilePathExtension -eq ".json")) {
-                $TargetFileName = $TargetFileName + ".json"
+        if ($TargetFilePath -gt 0) {
+            if (-not (Test-Path $TargetFilePath)) {
+                Write-Warning "Verzeichnis der Zieldatei nicht gefunden: $TargetFilePath"
+                $TargetFileName = $DefaultTargetFileName
             }
+        } else {
+            $TargetFileName = ".\" + $TargetFileName
+        }
+        $TargetFilePathExtension = [System.IO.Path]::GetExtension($TargetFileName).ToLower()
+        if (-not ($TargetFilePathExtension -eq ".json")) {
+            $TargetFileName = $TargetFileName + ".json"
         }
     } else {
-        $TargetFileName = ".\base64.json"
+        $TargetFileName = $DefaultTargetFileName
     }
     Write-Host "Zieldatei '$($TargetFileName)'..." -ForegroundColor Green
     $Files = Get-ChildItem -Path $SourcePath
 
     $convertedFiles = @()
+    if ($SourcePath -eq ".") {
+        $SourcePath = Get-Location
+    }
     for ($i = 0; $i -lt $Files.Length; $i++) {
         $FileToConvert = $Files[$i]
         $Index = $i + 1
@@ -100,14 +114,8 @@ if (($SourcePath -gt 0) -and (Test-Path $SourcePath)) {
     } catch
     {
         Write-Host ""
-        Write-Host "❌ Fehler beim Speichern der Datei:" -ForegroundColor Red
+        Write-Host "❌ Fehler beim Speichern der JSON-Datei: " -ForegroundColor Red
         Write-Host $_.Exception.Message -ForegroundColor Red
     }
     Write-Host "beendet."
-} else {
-    if ($SourcePath -gt 0) {
-        Write-Host "Quellverzeichnis '$($SourcePath)' nicht gefunden!" -ForegroundColor Magenta
-    } else {
-        Write-Host "Bitte als Parameter das Quellverzeichnis angeben, in dem die Dateien liegen!" -ForegroundColor Magenta
-    }
 }
