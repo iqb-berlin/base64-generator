@@ -4,7 +4,7 @@ param(
 )
 
 # IQB-base64 generator
-# version 1.0
+# version 1.1
 # git-repo: https://github.com/iqb-berlin/base64-generator
 # docs (German only): https://iqb-berlin.github.io/tba-info/tasks/design/media/base64
 
@@ -103,6 +103,7 @@ if (-not ([string]::IsNullOrEmpty($SourcePath))) {
     $myDate = Get-Date
     $output = [ordered]@{
         tool = "iqb-base64-generator"
+        version = "1.1"
         created = $myDate.ToString()
         files = $convertedFiles
     }
