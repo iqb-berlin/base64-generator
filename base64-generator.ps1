@@ -3,8 +3,8 @@ param(
     [string]$TargetFileName = ""
 )
 
-# IQB-base64 generator
-# version 1.2
+$GeneratorId = "iqb-base64-generator"
+$GeneratorVersion = "1.2"
 # git-repo: https://github.com/iqb-berlin/base64-generator
 # docs (German only): https://iqb-berlin.github.io/tba-info/tasks/design/media/base64
 
@@ -54,43 +54,46 @@ function Convert-ToBase64 {
 }
 
 Write-Host "=== IQB Transformation von Audio- und Bilddateien nach base64 ===" -ForegroundColor Cyan
+$CurrentLocation = Get-Location
 
 if ([string]::IsNullOrEmpty($SourcePath) -or ($SourcePath -eq ".") -or ($SourcePath -eq ".\")) {
-    $SourcePath = "."
-} elseif (-not (Test-Path $SourcePath)){
+    $SourcePath = $CurrentLocation
+} elseif (Test-Path $SourcePath) {
+    $SourcePath = Resolve-Path -Path $SourcePath
+} else {
     Write-Host "❌ Pfad nicht gefunden: $SourcePath" -ForegroundColor Red
     $SourcePath = ""
 }
 
 if (-not ([string]::IsNullOrEmpty($SourcePath))) {
     Write-Host "Starte Generieren Verzeichnis '$($SourcePath)'" -ForegroundColor Green
-    $DefaultTargetFileName = ".\base64.json"
 
-    if ($TargetFileName -gt 0) {
+    $DefaultTargetFileName = "base64.json"
+    if ([string]::IsNullOrEmpty($TargetFileName)) {
+        $TargetFileName = "$CurrentLocation\$DefaultTargetFileName"
+    } else {
+        $TargetFileNameWithoutPath = [System.IO.Path]::GetFileName($TargetFileName)
+        if ([string]::IsNullOrEmpty($TargetFileNameWithoutPath)) {
+            $TargetFileNameWithoutPath = $DefaultTargetFileName
+        } else {
+            $TargetFilePathExtension = [System.IO.Path]::GetExtension($TargetFileNameWithoutPath).ToLower()
+            if (-not ($TargetFilePathExtension -eq ".json")) {
+                $TargetFileNameWithoutPath = $TargetFileNameWithoutPath + ".json"
+            }
+        }
         $TargetFilePath = [System.IO.Path]::GetDirectoryName($TargetFileName)
-        if ($TargetFilePath -gt 0) {
+        if ([string]::IsNullOrEmpty($TargetFilePath)) {
+            $TargetFileName = "$CurrentLocation\$TargetFileNameWithoutPath"
+        } else {
+            $TargetFilePath = Resolve-Path -Path $TargetFilePath
             if (-not (Test-Path $TargetFilePath)) {
                 Write-Warning "Verzeichnis der Zieldatei nicht gefunden: $TargetFilePath"
-                $TargetFileName = $DefaultTargetFileName
+                $TargetFilePath = $CurrentLocation
             }
-        } else {
-            $TargetFileName = ".\" + $TargetFileName
+            $TargetFileName = "$TargetFilePath\$TargetFileNameWithoutPath"
         }
-        $TargetFilePathExtension = [System.IO.Path]::GetExtension($TargetFileName).ToLower()
-        if (-not ($TargetFilePathExtension -eq ".json")) {
-            $TargetFileName = $TargetFileName + ".json"
-        }
-    } else {
-        $TargetFileName = $DefaultTargetFileName
     }
     Write-Host "Zieldatei '$($TargetFileName)'..." -ForegroundColor Green
-    $ScriptLocation = Get-Location
-    if ($SourcePath -eq ".") {
-        $SourcePath = $ScriptLocation
-    }
-    if (Test-Path $SourcePath) {
-        $SourcePath = (Join-Path $ScriptLocation $SourcePath) | Resolve-Path
-    }
 
     $Files = Get-ChildItem -Path $SourcePath
     $convertedFiles = @()
@@ -106,8 +109,8 @@ if (-not ([string]::IsNullOrEmpty($SourcePath))) {
     }
     $myDate = Get-Date
     $output = [ordered]@{
-        tool = "iqb-base64-generator"
-        version = "1.2"
+        tool = $GeneratorId
+        version = $GeneratorVersion
         created = $myDate.ToString()
         files = $convertedFiles
     }
