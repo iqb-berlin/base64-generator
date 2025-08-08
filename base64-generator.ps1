@@ -4,7 +4,7 @@ param(
 )
 
 # IQB-base64 generator
-# version 1.1
+# version 1.2
 # git-repo: https://github.com/iqb-berlin/base64-generator
 # docs (German only): https://iqb-berlin.github.io/tba-info/tasks/design/media/base64
 
@@ -84,12 +84,16 @@ if (-not ([string]::IsNullOrEmpty($SourcePath))) {
         $TargetFileName = $DefaultTargetFileName
     }
     Write-Host "Zieldatei '$($TargetFileName)'..." -ForegroundColor Green
-    $Files = Get-ChildItem -Path $SourcePath
-
-    $convertedFiles = @()
+    $ScriptLocation = Get-Location
     if ($SourcePath -eq ".") {
-        $SourcePath = Get-Location
+        $SourcePath = $ScriptLocation
     }
+    if (Test-Path $SourcePath) {
+        $SourcePath = (Join-Path $ScriptLocation $SourcePath) | Resolve-Path
+    }
+
+    $Files = Get-ChildItem -Path $SourcePath
+    $convertedFiles = @()
     for ($i = 0; $i -lt $Files.Length; $i++) {
         $FileToConvert = $Files[$i]
         $Index = $i + 1
@@ -103,7 +107,7 @@ if (-not ([string]::IsNullOrEmpty($SourcePath))) {
     $myDate = Get-Date
     $output = [ordered]@{
         tool = "iqb-base64-generator"
-        version = "1.1"
+        version = "1.2"
         created = $myDate.ToString()
         files = $convertedFiles
     }
