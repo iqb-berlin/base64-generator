@@ -29,6 +29,7 @@ function Convert-ToBase64 {
             ".wav"  { "audio/wav" }
             ".ogg"  { "audio/ogg" }
             ".m4a"  { "audio/mp4" }
+            ".mp4"  { "video/mp4" }
             default { "" }
         }
         if ($mimeType -gt 0) {
