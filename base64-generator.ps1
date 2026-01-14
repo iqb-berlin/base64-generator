@@ -4,7 +4,7 @@ param(
 )
 
 $GeneratorId = "iqb-base64-generator"
-$GeneratorVersion = "1.2"
+$GeneratorVersion = "1.4"
 # git-repo: https://github.com/iqb-berlin/base64-generator
 # docs (German only): https://iqb-berlin.github.io/tba-info/tasks/design/media/base64
 
@@ -19,31 +19,41 @@ function Convert-ToBase64 {
     try {
         $extension = [System.IO.Path]::GetExtension($FilePath).ToLower()
         $mimeType = switch ($extension) {
-            ".jpg"  { "image/jpeg" }
+            ".jpg" { "image/jpeg" }
             ".jpeg" { "image/jpeg" }
-            ".png"  { "image/png" }
-            ".gif"  { "image/gif" }
-            ".bmp"  { "image/bmp" }
+            ".png" { "image/png" }
+            ".gif" { "image/gif" }
+            ".bmp" { "image/bmp" }
             ".webp" { "image/webp" }
-            ".mp3"  { "audio/mpeg" }
-            ".wav"  { "audio/wav" }
-            ".ogg"  { "audio/ogg" }
-            ".m4a"  { "audio/mp4" }
-            ".mp4"  { "video/mp4" }
+            ".mp3" { "audio/mpeg" }
+            ".wav" { "audio/wav" }
+            ".ogg" { "audio/ogg" }
+            ".m4a" { "audio/mp4" }
+            ".mp4" { "video/mp4" }
             default { "" }
         }
         if ($mimeType -gt 0) {
-            $paramKey = $mimeType.Substring(0,5) + "Source"
+            $paramKey = $mimeType.Substring(0, 5) + "Source"
             $filename = [System.IO.Path]::GetFileName($FilePath)
             $imageBytes = [System.IO.File]::ReadAllBytes($FilePath)
             $base64String = [System.Convert]::ToBase64String($imageBytes)
             $base64parameter = "data:$mimeType;base64,$base64String"
-            $file = [ordered]@{
+            $variants = @()
+            $variants += [ordered]@{
                 $paramKey = $base64parameter
+                comment = "use the line above to copy with colon"
+            }
+            $variants += [ordered]@{
+                comment = "use the line below to copy without colon"
+                $paramKey = $base64parameter
+            }
+            $file = [ordered]@{
                 filename = $filename
+                base64 = $variants
             }
             return $file
-        } else {
+        }
+        else {
             Write-Warning "Unbekannter Dateityp: $FilePath - ignoriere"
             return ""
         }
@@ -54,14 +64,18 @@ function Convert-ToBase64 {
     }
 }
 
-Write-Host "=== IQB Transformation von Audio- und Bilddateien nach base64 ===" -ForegroundColor Cyan
+Write-Host "=== IQB Transformation von Audio- und Bilddateien nach base64 v$($GeneratorVersion) ===" -ForegroundColor Cyan
+Write-Host "Starte Generieren Verzeichnis '$($SourcePath)'" -ForegroundColor Green
+
 $CurrentLocation = Get-Location
 
 if ([string]::IsNullOrEmpty($SourcePath) -or ($SourcePath -eq ".") -or ($SourcePath -eq ".\")) {
     $SourcePath = $CurrentLocation
-} elseif (Test-Path $SourcePath) {
+}
+elseif (Test-Path $SourcePath) {
     $SourcePath = Resolve-Path -Path $SourcePath
-} else {
+}
+else {
     Write-Host "❌ Pfad nicht gefunden: $SourcePath" -ForegroundColor Red
     $SourcePath = ""
 }
@@ -72,11 +86,13 @@ if (-not ([string]::IsNullOrEmpty($SourcePath))) {
     $DefaultTargetFileName = "base64.json"
     if ([string]::IsNullOrEmpty($TargetFileName)) {
         $TargetFileName = "$CurrentLocation\$DefaultTargetFileName"
-    } else {
+    }
+    else {
         $TargetFileNameWithoutPath = [System.IO.Path]::GetFileName($TargetFileName)
         if ([string]::IsNullOrEmpty($TargetFileNameWithoutPath)) {
             $TargetFileNameWithoutPath = $DefaultTargetFileName
-        } else {
+        }
+        else {
             $TargetFilePathExtension = [System.IO.Path]::GetExtension($TargetFileNameWithoutPath).ToLower()
             if (-not ($TargetFilePathExtension -eq ".json")) {
                 $TargetFileNameWithoutPath = $TargetFileNameWithoutPath + ".json"
@@ -85,7 +101,8 @@ if (-not ([string]::IsNullOrEmpty($SourcePath))) {
         $TargetFilePath = [System.IO.Path]::GetDirectoryName($TargetFileName)
         if ([string]::IsNullOrEmpty($TargetFilePath)) {
             $TargetFileName = "$CurrentLocation\$TargetFileNameWithoutPath"
-        } else {
+        }
+        else {
             $TargetFilePath = Resolve-Path -Path $TargetFilePath
             if (-not (Test-Path $TargetFilePath)) {
                 Write-Warning "Verzeichnis der Zieldatei nicht gefunden: $TargetFilePath"
@@ -110,18 +127,17 @@ if (-not ([string]::IsNullOrEmpty($SourcePath))) {
     }
     $myDate = Get-Date
     $output = [ordered]@{
-        tool = $GeneratorId
+        tool    = $GeneratorId
         version = $GeneratorVersion
         created = $myDate.ToString()
-        files = $convertedFiles
+        files   = $convertedFiles
     }
-    $jsonOutput = $output | ConvertTo-Json -Compress:$false
-    try
-    {
+    $jsonOutput = $output | ConvertTo-Json -Compress:$false -Depth:4
+    try {
         $jsonOutput | Out-File -FilePath $TargetFileName -Encoding UTF8
         Write-Host "$TargetFileName erzeugt."
-    } catch
-    {
+    }
+    catch {
         Write-Host ""
         Write-Host "❌ Fehler beim Speichern der JSON-Datei: " -ForegroundColor Red
         Write-Host $_.Exception.Message -ForegroundColor Red
