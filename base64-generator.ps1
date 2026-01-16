@@ -4,7 +4,7 @@ param(
 )
 
 $GeneratorId = "iqb-base64-generator"
-$GeneratorVersion = "1.4"
+$GeneratorVersion = "1.5"
 # git-repo: https://github.com/iqb-berlin/base64-generator
 # docs (German only): https://iqb-berlin.github.io/tba-info/tasks/design/media/base64
 
@@ -41,10 +41,10 @@ function Convert-ToBase64 {
             $variants = @()
             $variants += [ordered]@{
                 $paramKey = $base64parameter
-                comment = "use the line above to copy with colon"
+                comment = "use the line above to copy with comma"
             }
             $variants += [ordered]@{
-                comment = "use the line below to copy without colon"
+                comment = "use the line below to copy without comma"
                 $paramKey = $base64parameter
             }
             $file = [ordered]@{
