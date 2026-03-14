@@ -4,7 +4,7 @@ param(
 )
 
 $GeneratorId = "iqb-base64-generator"
-$GeneratorVersion = "1.5"
+$GeneratorVersion = "1.6"
 # git-repo: https://github.com/iqb-berlin/base64-generator
 # docs (German only): https://iqb-berlin.github.io/tba-info/tasks/design/media/base64
 
@@ -33,6 +33,8 @@ function Convert-ToBase64 {
             default { "" }
         }
         if ($mimeType -gt 0) {
+            $labelKey = "label"
+            $fileNameWithoutExtension = [System.IO.Path]::GetFileNameWithoutExtension($FilePath).ToLower()
             $paramKey = $mimeType.Substring(0, 5) + "Source"
             $filename = [System.IO.Path]::GetFileName($FilePath)
             $imageBytes = [System.IO.File]::ReadAllBytes($FilePath)
@@ -40,11 +42,13 @@ function Convert-ToBase64 {
             $base64parameter = "data:$mimeType;base64,$base64String"
             $variants = @()
             $variants += [ordered]@{
+                $labelKey = $fileNameWithoutExtension
                 $paramKey = $base64parameter
-                comment = "use the line above to copy with comma"
+                comment = "use the lines above to copy with comma"
             }
             $variants += [ordered]@{
-                comment = "use the line below to copy without comma"
+                comment = "use the lines below to copy without comma"
+                $labelKey = $fileNameWithoutExtension
                 $paramKey = $base64parameter
             }
             $file = [ordered]@{
